@@ -2,13 +2,18 @@ import sys
 from PyQt4 import QtCore, QtGui
 
 class Ban(QtGui.QWidget):
-    def __init__(self):
+    def __init__(self, parent):
         super(Ban, self).__init__()
-        # grid layout setting
-        self.grid = QtGui.QGridLayout(self)
-        for i in range(9):
-            for j in range(9):
-                self.grid.addWidget(QtGui.QLabel(), i, j)
+
+    def paintEvent(self, e):
+        qp = QtGui.QPainter()
+        qp.begin(self)
+        qp.setPen(QtCore.Qt.black)
+        w = self.width()-1
+        h = self.height()-1
+        for i in range(10):
+            qp.drawLine(0, i*h/9, w, i*h/9)
+            qp.drawLine(i*w/9, 0, i*w/9, h)
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
@@ -19,7 +24,7 @@ class Window(QtGui.QMainWindow):
         # central widget setting
         self.widget = QtGui.QWidget()
         self.vbox = QtGui.QVBoxLayout(self.widget)
-        self.ban = Ban()
+        self.ban = Ban(self)
         self.vbox.addWidget(self.ban)
         self.setCentralWidget(self.widget)
 
