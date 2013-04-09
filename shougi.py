@@ -13,6 +13,13 @@ class Sente_Mochi(QtGui.QWidget):
                      Koma.Sente_Kaku: 0}
         self.select = Koma.Nothing
         self.ban = ban
+        self.location = {Koma.Sente_Fu: 2,
+                         Koma.Sente_Kyou: 3,
+                         Koma.Sente_Kei: 4,
+                         Koma.Sente_Gin: 5,
+                         Koma.Sente_Kin: 6,
+                         Koma.Sente_Hisha: 7,
+                         Koma.Sente_Kaku: 8}
     
     def paintEvent(self, e):
         width = self.width()-1
@@ -23,7 +30,7 @@ class Sente_Mochi(QtGui.QWidget):
         # draw select
         if self.select != Koma.Nothing:
             qp.setBrush(QtGui.QColor(204,255,255))
-            qp.drawRect((self.select+1)*self.w, 0, self.w, height)
+            qp.drawRect(self.location[self.select]*self.w, 0, self.w, height)
         # draw lines
         qp.setPen(QtCore.Qt.black)
         qp.drawLine(0, 0, width, 0)
@@ -32,56 +39,16 @@ class Sente_Mochi(QtGui.QWidget):
         qp.drawLine(width, 0, width, height)
         # draw images
         qp.drawImage(QtCore.QRect(0, 0, 2*self.w, height),
-                     QtGui.QImage('./Pictures/Sente.png'))
-        if self.koma[Koma.Sente_Fu] > 0:
-            qp.drawImage(QtCore.QRect(2*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Sente_Fu.png'))
-            if self.koma[Koma.Sente_Fu] > 1:
-                qp.drawText(QtCore.QRectF(2.8*self.w, 0.8*height,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Sente_Fu]))
-        if self.koma[Koma.Sente_Kyou] > 0:
-            qp.drawImage(QtCore.QRect(3*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Sente_Kyou.png'))
-            if self.koma[Koma.Sente_Kyou] > 1:
-                qp.drawText(QtCore.QRectF(3.8*self.w, 0.8*height,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Sente_Kyou]))
-        if self.koma[Koma.Sente_Kei] > 0:
-            qp.drawImage(QtCore.QRect(4*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Sente_Kei.png'))
-            if self.koma[Koma.Sente_Kei] > 1:
-                qp.drawText(QtCore.QRectF(4.8*self.w, 0.8*height,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Sente_Kei]))
-        if self.koma[Koma.Sente_Gin] > 0:
-            qp.drawImage(QtCore.QRect(5*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Sente_Gin.png'))
-            if self.koma[Koma.Sente_Gin] > 1:
-                qp.drawText(QtCore.QRectF(5.8*self.w, 0.8*height,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Sente_Gin]))
-        if self.koma[Koma.Sente_Kin] > 0:
-            qp.drawImage(QtCore.QRect(8*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Sente_Kin.png'))
-            if self.koma[Koma.Sente_Kin] > 1:
-                qp.drawText(QtCore.QRectF(6.8*self.w, 0.8*height,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Sente_Kin]))
-        if self.koma[Koma.Sente_Hisha] > 0:
-            qp.drawImage(QtCore.QRect(6*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Sente_Hisha.png'))
-            if self.koma[Koma.Sente_Hisha] > 1:
-                qp.drawText(QtCore.QRectF(7.8*w, 0.8*height,
-                                         0.2*w, 0.2*height),
-                            str(self.koma[Koma.Sente_Hisha]))
-        if self.koma[Koma.Sente_Kaku] > 0:
-            qp.drawImage(QtCore.QRect(7*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Sente_Kaku.png'))
-            if self.koma[Koma.Sente_Kaku] > 1:
-                qp.drawText(QtCore.QRectF(8.8*self.w, 0.8*height,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Sente_Kaku]))
+                     QtGui.QImage(Pictures.Path['Sente']))
+        for kind in self.koma.keys():
+            if self.koma[kind] > 0:
+                qp.drawImage(QtCore.QRect(self.location[kind]*self.w, 0,
+                                          self.w, height),
+                             QtGui.QImage(Pictures.Path[kind]))
+                if self.koma[kind] > 1:
+                    qp.drawText(QtCore.QRectF(self.location[kind]*self.w, 0,
+                                              self.w, height),
+                                str(self.koma[kind]))
         qp.end()
 
     def mousePressEvent(self, e):
@@ -120,6 +87,13 @@ class Gote_Mochi(QtGui.QWidget):
                      Koma.Gote_Kaku: 0}
         self.select = Koma.Nothing
         self.ban = ban
+        self.location = {Koma.Gote_Fu: 6,
+                         Koma.Gote_Kyou: 5,
+                         Koma.Gote_Kei: 4,
+                         Koma.Gote_Gin: 3,
+                         Koma.Gote_Kin: 2,
+                         Koma.Gote_Hisha: 1,
+                         Koma.Gote_Kaku: 0}
     
     def paintEvent(self, e):
         width = self.width()-1
@@ -130,7 +104,7 @@ class Gote_Mochi(QtGui.QWidget):
         # draw select
         if self.select != Koma.Nothing:
             qp.setBrush(QtGui.QColor(204,255,255))
-            qp.drawRect((21-self.select)*self.w, 0, self.w, height)
+            qp.drawRect(self.location[self.select]*self.w, 0, self.w, height)
         # draw lines
         qp.setPen(QtCore.Qt.black)
         qp.drawLine(0, 0, width, 0)
@@ -139,56 +113,16 @@ class Gote_Mochi(QtGui.QWidget):
         qp.drawLine(width, 0, width, height)
         # draw images
         qp.drawImage(QtCore.QRect(7*self.w, 0, 2*self.w, height),
-                     QtGui.QImage('./Pictures/Gote.png'))
-        if self.koma[Koma.Gote_Fu] > 0:
-            qp.drawImage(QtCore.QRect(6*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Gote_Fu.png'))
-            if self.koma[Koma.Gote_Fu] > 1:
-                qp.drawText(QtCore.QRectF(6*self.w, 0.,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Gote_Fu]))
-        if self.koma[Koma.Gote_Kyou] > 0:
-            qp.drawImage(QtCore.QRect(5*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Gote_Kyou.png'))
-            if self.koma[Koma.Gote_Kyou] > 1:
-                qp.drawText(QtCore.QRectF(5*self.w, 0,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Gote_Kyou]))
-        if self.koma[Koma.Gote_Kei] > 0:
-            qp.drawImage(QtCore.QRect(4*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Gote_Kei.png'))
-            if self.koma[Koma.Gote_Kei] > 1:
-                qp.drawText(QtCore.QRectF(4*self.w, 0,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Gote_Kei]))
-        if self.koma[Koma.Gote_Gin] > 0:
-            qp.drawImage(QtCore.QRect(3*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Gote_Gin.png'))
-            if self.koma[Koma.Gote_Gin] > 1:
-                qp.drawText(QtCore.QRectF(3*self.w, 0,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Gote_Gin]))
-        if self.koma[Koma.Gote_Kin] > 0:
-            qp.drawImage(QtCore.QRect(0*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Gote_Kin.png'))
-            if self.koma[Koma.Gote_Kin] > 1:
-                qp.drawText(QtCore.QRectF(2*self.w, 0,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Gote_Kin]))
-        if self.koma[Koma.Gote_Hisha] > 0:
-            qp.drawImage(QtCore.QRect(2*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Gote_Hisha.png'))
-            if self.koma[Koma.Gote_Hisha] > 1:
-                qp.drawText(QtCore.QRectF(1*self.w, 0,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Gote_Hisha]))
-        if self.koma[Koma.Gote_Kaku] > 0:
-            qp.drawImage(QtCore.QRect(1*self.w, 0, self.w, height),
-                         QtGui.QImage('./Pictures/Gote_Kaku.png'))
-            if self.koma[Koma.Gote_Kaku] > 1:
-                qp.drawText(QtCore.QRectF(0, 0,
-                                         0.2*self.w, 0.2*height),
-                            str(self.koma[Koma.Gote_Kaku]))
+                     QtGui.QImage(Pictures.Path['Gote']))
+        for kind in self.koma.keys():
+            if self.koma[kind] > 0:
+                qp.drawImage(QtCore.QRect(self.location[kind]*self.w, 0,
+                                          self.w, height),
+                             QtGui.QImage(Pictures.Path[kind]))
+                if self.koma[kind] > 1:
+                    qp.drawText(QtCore.QRectF(self.location[kind]*self.w, 0,
+                                              0.2*self.w, 0.2*height),
+                                str(self.koma[kind]))
         qp.end()
 
     def mousePressEvent(self, e):
@@ -330,118 +264,10 @@ class Ban(QtGui.QWidget):
         # draw images
         for i in range(9):
             for j in range(9):
-                if self.state[i][j] == Koma.Sente_Fu:
+                if self.state[i][j] != Koma.Nothing:
                     qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
                                               self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_Fu.png'))
-                elif self.state[i][j] == Koma.Sente_Kyou:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_Kyou.png'))
-                elif self.state[i][j] == Koma.Sente_Kei:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_Kei.png'))
-                elif self.state[i][j] == Koma.Sente_Gin:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_Gin.png'))
-                elif self.state[i][j] == Koma.Sente_Kin:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_Kin.png'))
-                elif self.state[i][j] == Koma.Sente_Hisha:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_Hisha.png'))
-                elif self.state[i][j] == Koma.Sente_Kaku:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_Kaku.png'))
-                elif self.state[i][j] == Koma.Sente_NariFu:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_NariFu.png'))
-                elif self.state[i][j] == Koma.Sente_NariKyou:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_NariKyou.png'))
-                elif self.state[i][j] == Koma.Sente_NariKei:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_NariKei.png'))
-                elif self.state[i][j] == Koma.Sente_NariGin:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_NariGin.png'))
-                elif self.state[i][j] == Koma.Sente_NariHisha:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_NariHisha.png'))
-                elif self.state[i][j] == Koma.Sente_NariKaku:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_NariKaku.png'))
-                elif self.state[i][j] == Koma.Sente_Gyoku:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Sente_Gyoku.png'))
-                elif self.state[i][j] == Koma.Gote_Fu:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_Fu.png'))
-                elif self.state[i][j] == Koma.Gote_Kyou:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_Kyou.png'))
-                elif self.state[i][j] == Koma.Gote_Kei:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_Kei.png'))
-                elif self.state[i][j] == Koma.Gote_Gin:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_Gin.png'))
-                elif self.state[i][j] == Koma.Gote_Kin:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_Kin.png'))
-                elif self.state[i][j] == Koma.Gote_Hisha:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_Hisha.png'))
-                elif self.state[i][j] == Koma.Gote_Kaku:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_Kaku.png'))
-                elif self.state[i][j] == Koma.Gote_NariFu:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_NariFu.png'))
-                elif self.state[i][j] == Koma.Gote_NariKyou:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_NariKyou.png'))
-                elif self.state[i][j] == Koma.Gote_NariKei:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_NariKei.png'))
-                elif self.state[i][j] == Koma.Gote_NariGin:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_NariGin.png'))
-                elif self.state[i][j] == Koma.Gote_NariHisha:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_NariHisha.png'))
-                elif self.state[i][j] == Koma.Gote_NariKaku:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_NariKaku.png'))
-                elif self.state[i][j] == Koma.Gote_Gyoku:
-                    qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
-                                              self.w, self.h),
-                                 QtGui.QImage('./Pictures/Gote_Gyoku.png'))
+                                 QtGui.QImage(Pictures.Path[self.state[i][j]]))
         qp.end()
 
     def mousePressEvent(self, e):
@@ -809,7 +635,7 @@ class Koma:
     KakuGroup = [Sente_Kaku, Sente_NariKaku, Gote_Kaku, Gote_NariKaku]
     Sente_Hashiri = [Sente_Kyou, Sente_Hisha, Sente_NariHisha, 
                      Sente_Kaku, Sente_NariKaku]
-    Gote_Hashiri = [Gote_Kyou, Gote_Hisha, Gote_NariKaku,
+    Gote_Hashiri = [Gote_Kyou, Gote_Hisha, Gote_NariHisha,
                     Gote_Kaku, Gote_NariKaku]
     Sente_Available = Gote_Koma + [Nothing]
     Gote_Available = Sente_Koma + [Nothing]
@@ -817,6 +643,39 @@ class Koma:
 class Turn:
     Sente = 0
     Gote = 1
+
+class Pictures:
+    Path = {
+        Koma.Sente_Fu: './Pictures/Sente_Fu.png',
+        Koma.Sente_Kyou: './Pictures/Sente_Kyou.png',
+        Koma.Sente_Kei: './Pictures/Sente_Kei.png',
+        Koma.Sente_Gin: './Pictures/Sente_Gin.png',
+        Koma.Sente_Hisha: './Pictures/Sente_Hisha.png',
+        Koma.Sente_Kaku: './Pictures/Sente_Kaku.png',
+        Koma.Sente_Kin: './Pictures/Sente_Kin.png',
+        Koma.Sente_NariFu: './Pictures/Sente_NariFu.png',
+        Koma.Sente_NariKyou: './Pictures/Sente_NariKyou.png',
+        Koma.Sente_NariKei: './Pictures/Sente_NariKei.png',
+        Koma.Sente_NariGin: './Pictures/Sente_NariGin.png',
+        Koma.Sente_NariHisha: './Pictures/Sente_NariHisha.png',
+        Koma.Sente_NariKaku: './Pictures/Sente_NariKaku.png',
+        Koma.Sente_Gyoku: './Pictures/Sente_Gyoku.png',
+        Koma.Gote_Fu: './Pictures/Gote_Fu.png',
+        Koma.Gote_Kyou: './Pictures/Gote_Kyou.png',
+        Koma.Gote_Kei: './Pictures/Gote_Kei.png',
+        Koma.Gote_Gin: './Pictures/Gote_Gin.png',
+        Koma.Gote_Hisha: './Pictures/Gote_Hisha.png',
+        Koma.Gote_Kaku: './Pictures/Gote_Kaku.png',
+        Koma.Gote_Kin: './Pictures/Gote_Kin.png',
+        Koma.Gote_NariFu: './Pictures/Gote_NariFu.png',
+        Koma.Gote_NariKyou: './Pictures/Gote_NariKyou.png',
+        Koma.Gote_NariKei: './Pictures/Gote_NariKei.png',
+        Koma.Gote_NariGin: './Pictures/Gote_NariGin.png',
+        Koma.Gote_NariHisha: './Pictures/Gote_NariHisha.png',
+        Koma.Gote_NariKaku: './Pictures/Gote_NariKaku.png',
+        Koma.Gote_Gyoku: './Pictures/Gote_Gyoku.png',
+        'Sente': './Pictures/Sente.png',
+        'Gote': './Pictures/Gote.png' }
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
