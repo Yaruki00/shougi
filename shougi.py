@@ -1,8 +1,222 @@
 import sys
 from PyQt4 import QtCore, QtGui
 
+class Sente_Mochi(QtGui.QWidget):
+    def __init__(self, ban):
+        super(Sente_Mochi, self).__init__()
+        self.koma = {Koma.Sente_Fu: 0,
+                     Koma.Sente_Kyou: 0,
+                     Koma.Sente_Kei: 0,
+                     Koma.Sente_Gin: 0,
+                     Koma.Sente_Kin: 0,
+                     Koma.Sente_Hisha: 0,
+                     Koma.Sente_Kaku: 0}
+        self.select = Koma.Nothing
+        self.ban = ban
+    
+    def paintEvent(self, e):
+        width = self.width()-1
+        height = self.height()-1
+        self.w = width/9.0
+        qp = QtGui.QPainter()
+        qp.begin(self)
+        # draw select
+        if self.select != Koma.Nothing:
+            qp.setBrush(QtGui.QColor(204,255,255))
+            qp.drawRect((self.select+1)*self.w, 0, self.w, height)
+        # draw lines
+        qp.setPen(QtCore.Qt.black)
+        qp.drawLine(0, 0, width, 0)
+        qp.drawLine(0, 0, 0, height)
+        qp.drawLine(0, height, width, height)
+        qp.drawLine(width, 0, width, height)
+        # draw images
+        qp.drawImage(QtCore.QRect(0, 0, 2*self.w, height),
+                     QtGui.QImage('./Pictures/Sente.png'))
+        if self.koma[Koma.Sente_Fu] > 0:
+            qp.drawImage(QtCore.QRect(2*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Sente_Fu.png'))
+            if self.koma[Koma.Sente_Fu] > 1:
+                qp.drawText(QtCore.QRectF(2.8*self.w, 0.8*height,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Sente_Fu]))
+        if self.koma[Koma.Sente_Kyou] > 0:
+            qp.drawImage(QtCore.QRect(3*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Sente_Kyou.png'))
+            if self.koma[Koma.Sente_Kyou] > 1:
+                qp.drawText(QtCore.QRectF(3.8*self.w, 0.8*height,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Sente_Kyou]))
+        if self.koma[Koma.Sente_Kei] > 0:
+            qp.drawImage(QtCore.QRect(4*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Sente_Kei.png'))
+            if self.koma[Koma.Sente_Kei] > 1:
+                qp.drawText(QtCore.QRectF(4.8*self.w, 0.8*height,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Sente_Kei]))
+        if self.koma[Koma.Sente_Gin] > 0:
+            qp.drawImage(QtCore.QRect(5*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Sente_Gin.png'))
+            if self.koma[Koma.Sente_Gin] > 1:
+                qp.drawText(QtCore.QRectF(5.8*self.w, 0.8*height,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Sente_Gin]))
+        if self.koma[Koma.Sente_Kin] > 0:
+            qp.drawImage(QtCore.QRect(6*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Sente_Kin.png'))
+            if self.koma[Koma.Sente_Kin] > 1:
+                qp.drawText(QtCore.QRectF(6.8*self.w, 0.8*height,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Sente_Kin]))
+        if self.koma[Koma.Sente_Hisha] > 0:
+            qp.drawImage(QtCore.QRect(7*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Sente_Hisha.png'))
+            if self.koma[Koma.Sente_Hisha] > 1:
+                qp.drawText(QtCore.QRectF(7.8*w, 0.8*height,
+                                         0.2*w, 0.2*height),
+                            str(self.koma[Koma.Sente_Hisha]))
+        if self.koma[Koma.Sente_Kaku] > 0:
+            qp.drawImage(QtCore.QRect(8*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Sente_Kaku.png'))
+            if self.koma[Koma.Sente_Kaku] > 1:
+                qp.drawText(QtCore.QRectF(8.8*self.w, 0.8*height,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Sente_Kaku]))
+        qp.end()
+
+    def mousePressEvent(self, e):
+        if e.button() == QtCore.Qt.LeftButton:
+            x = int(e.x()//self.w)
+            if self.select == Koma.Nothing and self.ban.checkTurn(Turn.Sente):
+                if x > 1 and self.koma[x-1] > 0:
+                    self.select = x-1
+                    self.update()
+                    self.ban.calcCandidates(self.select, True)
+            else:
+                self.ban.cancelSelect()
+
+    def resetSelect(self):
+        self.select = Koma.Nothing
+        self.update()
+
+    def addKoma(self, koma):
+        self.koma[koma] += 1
+        self.update()
+
+    def subKoma(self, koma):
+        self.koma[koma] -= 1
+        self.select = Koma.Nothing
+        self.update()
+
+class Gote_Mochi(QtGui.QWidget):
+    def __init__(self, ban):
+        super(Gote_Mochi, self).__init__()
+        self.koma = {Koma.Gote_Fu: 0,
+                     Koma.Gote_Kyou: 0,
+                     Koma.Gote_Kei: 0,
+                     Koma.Gote_Gin: 0,
+                     Koma.Gote_Kin: 0,
+                     Koma.Gote_Hisha: 0,
+                     Koma.Gote_Kaku: 0}
+        self.select = Koma.Nothing
+        self.ban = ban
+    
+    def paintEvent(self, e):
+        width = self.width()-1
+        height = self.height()-1
+        self.w = width/9.0
+        qp = QtGui.QPainter()
+        qp.begin(self)
+        # draw select
+        if self.select != Koma.Nothing:
+            qp.setBrush(QtGui.QColor(204,255,255))
+            qp.drawRect((21-self.select)*self.w, 0, self.w, height)
+        # draw lines
+        qp.setPen(QtCore.Qt.black)
+        qp.drawLine(0, 0, width, 0)
+        qp.drawLine(0, 0, 0, height)
+        qp.drawLine(0, height, width, height)
+        qp.drawLine(width, 0, width, height)
+        # draw images
+        qp.drawImage(QtCore.QRect(7*self.w, 0, 2*self.w, height),
+                     QtGui.QImage('./Pictures/Gote.png'))
+        if self.koma[Koma.Gote_Fu] > 0:
+            qp.drawImage(QtCore.QRect(6*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Gote_Fu.png'))
+            if self.koma[Koma.Gote_Fu] > 1:
+                qp.drawText(QtCore.QRectF(6*self.w, 0.,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Gote_Fu]))
+        if self.koma[Koma.Gote_Kyou] > 0:
+            qp.drawImage(QtCore.QRect(5*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Gote_Kyou.png'))
+            if self.koma[Koma.Gote_Kyou] > 1:
+                qp.drawText(QtCore.QRectF(5*self.w, 0,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Gote_Kyou]))
+        if self.koma[Koma.Gote_Kei] > 0:
+            qp.drawImage(QtCore.QRect(4*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Gote_Kei.png'))
+            if self.koma[Koma.Gote_Kei] > 1:
+                qp.drawText(QtCore.QRectF(4*self.w, 0,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Gote_Kei]))
+        if self.koma[Koma.Gote_Gin] > 0:
+            qp.drawImage(QtCore.QRect(3*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Gote_Gin.png'))
+            if self.koma[Koma.Gote_Gin] > 1:
+                qp.drawText(QtCore.QRectF(3*self.w, 0,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Gote_Gin]))
+        if self.koma[Koma.Gote_Kin] > 0:
+            qp.drawImage(QtCore.QRect(2*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Gote_Kin.png'))
+            if self.koma[Koma.Gote_Kin] > 1:
+                qp.drawText(QtCore.QRectF(2*self.w, 0,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Gote_Kin]))
+        if self.koma[Koma.Gote_Hisha] > 0:
+            qp.drawImage(QtCore.QRect(1*self.w, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Gote_Hisha.png'))
+            if self.koma[Koma.Gote_Hisha] > 1:
+                qp.drawText(QtCore.QRectF(1*self.w, 0,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Gote_Hisha]))
+        if self.koma[Koma.Gote_Kaku] > 0:
+            qp.drawImage(QtCore.QRect(0, 0, self.w, height),
+                         QtGui.QImage('./Pictures/Gote_Kaku.png'))
+            if self.koma[Koma.Gote_Kaku] > 1:
+                qp.drawText(QtCore.QRectF(0, 0,
+                                         0.2*self.w, 0.2*height),
+                            str(self.koma[Koma.Gote_Kaku]))
+        qp.end()
+
+    def mousePressEvent(self, e):
+        if e.button() == QtCore.Qt.LeftButton:
+            x = int(e.x()//self.w)
+            if self.select == Koma.Nothing and self.ban.checkTurn(Turn.Gote):
+                if x < 7 and self.koma[21-x] > 0:
+                    self.select = 21-x
+                    self.update()
+                    self.ban.calcCandidates(self.select, True)
+            else:
+                self.ban.cancelSelect()
+
+    def resetSelect(self):
+        self.select = Koma.Nothing
+        self.update()
+
+    def addKoma(self, koma):
+        self.koma[koma] += 1
+        self.update()
+
+    def subKoma(self, koma):
+        self.koma[koma] -= 1
+        self.select = Koma.Nothing
+        self.update()
+
 class Ban(QtGui.QWidget):
-    def __init__(self, parent):
+    def __init__(self):
         super(Ban, self).__init__()
         self.state = [[Koma.Gote_Kyou,
                        Koma.Nothing,
@@ -87,6 +301,7 @@ class Ban(QtGui.QWidget):
                        Koma.Sente_Kyou]]
         self.turn = Turn.Sente
         self.select = []
+        self.mochi_select = Koma.Nothing
         self.candidates = []
 
     def paintEvent(self, e):
@@ -194,20 +409,34 @@ class Ban(QtGui.QWidget):
                     x,
                     y)
                 self.update()
+            # move or put koma
             elif [x, y] in self.candidates:
+                # move
                 if self.select != []:
+                    if self.state[x][y] in Koma.Sente_Koma:
+                        self.gote_mochi.addKoma(self.state[x][y]+14)
+                    elif self.state[x][y] in Koma.Gote_Koma:
+                        self.sente_mochi.addKoma(self.state[x][y]-14)
                     self.state[x][y] = self.state[self.select[0]][self.select[1]]
                     self.state[self.select[0]][self.select[1]] = Koma.Nothing
                     self.select = []
+                # put
+                else:
+                    self.state[x][y] = self.mochi_select
+                    if self.turn == Turn.Sente:
+                        self.sente_mochi.subKoma(self.mochi_select)
+                    else:
+                        self.gote_mochi.subKoma(self.mochi_select)
+                    self.mochi_select = Koma.Nothing
                 self.candidates = []
                 self.turn = self.turn ^ 1
                 self.update()
+            # cancel
             else:
-                self.select = []
-                self.candidates = []
-                self.update()
+                self.cancelSelect()
 
-    def calcCandidates(self, koma, mochi, x, y):
+    def calcCandidates(self, koma, mochi, x=0, y=0):
+        # koma on ban
         if mochi == False:
             movable = self.calcMovable(koma, x, y)
             if koma in Koma.Sente_Koma:
@@ -240,10 +469,54 @@ class Ban(QtGui.QWidget):
                     for masu in movable:
                         if self.state[masu[0]][masu[1]] in Koma.Gote_Available:
                             self.candidates.append(masu)
-        elif mochi == True:
-            '''not implemented'''
+        # mochi koma
         else:
-            return
+            if koma in Koma.Sente_Koma:
+                if koma == Koma.Sente_Fu:
+                    for i in range(9):
+                        row = []
+                        for j in range(1, 9):
+                            if self.state[i][j] == Koma.Nothing:
+                                row.append([i, j])
+                            elif self.state[i][j] == Koma.Sente_Fu:
+                                row = []
+                                break
+                        self.candidates.extend(row)
+                else:
+                    if koma == Koma.Sente_Kyou:
+                        start = 1
+                    elif koma == Koma.Sente_Kei:
+                        start = 2
+                    else:
+                        start = 0
+                    for i in range(9):
+                        for j in range(start, 9):
+                            if self.state[i][j] == Koma.Nothing:
+                                self.candidates.append([i, j])
+            else:
+                if koma == Koma.Gote_Fu:
+                    for i in range(9):
+                        row = []
+                        for j in range(0, 8):
+                            if self.state[i][j] == Koma.Nothing:
+                                row.append([i, j])
+                            elif self.state[i][j] == Koma.Gote_Fu:
+                                row = []
+                                break
+                        self.candidates.extend(row)
+                else:
+                    if koma == Koma.Gote_Kyou:
+                        end = 8
+                    elif koma == Koma.Gote_Kei:
+                        end = 7
+                    else:
+                        end = 9
+                    for i in range(9):
+                        for j in range(0, end):
+                            if self.state[i][j] == Koma.Nothing:
+                                self.candidates.append([i, j])
+            self.mochi_select = koma
+            self.update()
 
     def calcMovable(self, koma, x, y):
         movable = []
@@ -258,7 +531,7 @@ class Ban(QtGui.QWidget):
             movable.append(direction)
         elif koma == Koma.Gote_Kyou:
             direction = []
-            for i in range(1, 8-y):
+            for i in range(1, 9-y):
                 direction.append([x, y+i])
             movable.append(direction)
         elif koma == Koma.Sente_Kei:
@@ -390,6 +663,30 @@ class Ban(QtGui.QWidget):
                 movable.append([x+1, y+1])
         return movable
 
+    def setMochi(self, sente, gote):
+        self.sente_mochi = sente
+        self.gote_mochi = gote
+
+    def checkTurn(self, turn):
+        if turn == self.turn:
+            return True
+        else:
+            return False
+
+    def cancelSelect(self):
+        if self.select != []:
+            self.select = []
+            self.candidates = []
+            self.update()
+        elif self.turn == Turn.Sente and self.mochi_select != Koma.Nothing:
+            self.sente_mochi.resetSelect()
+            self.candidates = []
+            self.update()
+        elif self.turn == Turn.Gote and self.mochi_select != Koma.Nothing:
+            self.gote_mochi.resetSelect()
+            self.candidates = []
+            self.update()
+
 class Koma:
     Nothing = 0
     Sente_Fu = 1
@@ -447,9 +744,14 @@ class Window(QtGui.QMainWindow):
         self.setWindowTitle('HeppokoShougi')
         # central widget setting
         self.widget = QtGui.QWidget()
-        self.vbox = QtGui.QVBoxLayout(self.widget)
-        self.ban = Ban(self)
-        self.vbox.addWidget(self.ban)
+        self.grid = QtGui.QGridLayout(self.widget)
+        self.ban = Ban()
+        self.sente_mochi = Sente_Mochi(self.ban)
+        self.gote_mochi = Gote_Mochi(self.ban)
+        self.ban.setMochi(self.sente_mochi, self.gote_mochi)
+        self.grid.addWidget(self.gote_mochi, 0, 0, 1, 1)
+        self.grid.addWidget(self.ban, 1, 0, 9, 1)
+        self.grid.addWidget(self.sente_mochi, 11, 0, 1, 1)
         self.setCentralWidget(self.widget)
 
 def main():
