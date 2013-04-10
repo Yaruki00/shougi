@@ -212,16 +212,12 @@ class Ban(QtGui.QWidget):
             elif (x, y) in self.candidates:
                 # move
                 if self.select != ():
-                    if self.state[(x, y)] in Koma.Sente_Koma:
-                        if self.state[(x, y)] in Koma.Sente_Nareru + [Koma.Sente_Kin]:
-                            self.gote_mochi.addKoma(self.state[(x, y)]+14)
-                        else:
-                            self.gote_mochi.addKoma(self.state[(x, y)]+7)
-                    elif self.state[(x, y)] in Koma.Gote_Koma:
-                        if self.state[(x, y)] in Koma.Gote_Nareru + [Koma.Gote_Kin]:
-                            self.sente_mochi.addKoma(self.state[(x, y)]-14)
-                        else:
-                            self.sente_mochi.addKoma(self.state[(x, y)]-21)
+                    if self.state[(x, y)] in Koma.Gote_Koma:
+                        self.sente_mochi.addKoma(
+                            Koma.changePlayer(self.state[(x, y)]))
+                    elif self.state[(x, y)] in Koma.Sente_Koma:
+                        self.gote_mochi.addKoma(
+                            Koma.changePlayer(self.state[(x, y)]))
                     if self.state[self.select] in Koma.Nareru \
                             and (self.turn == Turn.Sente and y < 3 or \
                                      self.turn == Turn.Gote and y > 5):
@@ -230,9 +226,9 @@ class Ban(QtGui.QWidget):
                                 y == 8 and (self.state[self.select] == Koma.Gote_Fu or self.state[self.select] == Koma.Gote_Kyou) or \
                                 y > 6 and self.state[self.select] == Koma.Gote_Kei:
                                 
-                            self.state[(x, y)] = self.state[self.select] + 7
+                            self.state[(x, y)] = Koma.naru(self.state[self.select], self.turn)
                         elif self.askNari():
-                            self.state[(x, y)] = self.state[self.select] + 7
+                            self.state[(x, y)] = Koma.naru(self.state[self.select], self.turn)
                         else:
                             self.state[(x, y)] = self.state[self.select]
                     else:
@@ -249,7 +245,7 @@ class Ban(QtGui.QWidget):
                     self.mochi_select = Koma.Nothing
                 # common
                 self.candidates = []
-                self.turn = self.turn ^ 1
+                self.turn = Turn.changeTurn(self.turn)
                 self.update()
             # cancel
             else:
@@ -258,37 +254,24 @@ class Ban(QtGui.QWidget):
     def calcCandidates(self, koma, mochi, x=0, y=0):
         # koma on ban
         if mochi == False:
-            movable = self.calcMovable(koma, x, y)
-            if koma in Koma.Sente_Koma:
-                if koma in Koma.Sente_Hashiri:
-                    for direction in movable:
-                        for masu in direction:
+            movable = self.calcMovable(koma, self.turn, x, y)
+            if koma in Koma.Hashiri:
+                for direction in movable:
+                    for masu in direction:
+                        if masu[0] in range(9) and masu[1] in range(9):
                             if self.state[masu] == Koma.Nothing:
                                 self.candidates.append(masu)
-                            elif self.state[masu] in Koma.Gote_Koma:
+                            elif self.state[masu] in Koma.teki(koma):
                                 self.candidates.append(masu)
                                 break
                             else:
                                 break
-                else:
-                    for masu in movable:
-                        if self.state[masu] in Koma.Sente_Available:
+            else:
+                for masu in movable:
+                    if masu[0] in range(9) and masu[1] in range(9):
+                        if self.state[masu] in Koma.available(koma):
                             self.candidates.append(masu)
-            elif koma in Koma.Gote_Koma:
-                if koma in Koma.Gote_Hashiri:
-                    for direction in movable:
-                        for masu in direction:
-                            if self.state[masu] == Koma.Nothing:
-                                self.candidates.append(masu)
-                            elif self.state[masu] in Koma.Sente_Koma:
-                                self.candidates.append(masu)
-                                break
-                            else:
-                                break
-                else:
-                    for masu in movable:
-                        if self.state[masu] in Koma.Gote_Available:
-                            self.candidates.append(masu)
+
         # mochi koma
         else:
             if koma in Koma.Sente_Koma:
@@ -338,12 +321,10 @@ class Ban(QtGui.QWidget):
             self.mochi_select = koma
             self.update()
 
-    def calcMovable(self, koma, x, y):
+    def calcMovable(self, koma, turn, x, y):
         movable = []
-        if koma == Koma.Sente_Fu:
-            movable.append((x, y-1))
-        elif koma == Koma.Gote_Fu:
-            movable.append((x, y+1))
+        if abs(koma) == Koma.Sente_Fu:
+            movable.append((x, y-1*turn))
         elif koma == Koma.Sente_Kyou:
             direction = []
             for i in range(1, y+1):
@@ -354,64 +335,14 @@ class Ban(QtGui.QWidget):
             for i in range(1, 9-y):
                 direction.append((x, y+i))
             movable.append(direction)
-        elif koma == Koma.Sente_Kei:
-            if x > 0:
-                movable.append((x-1, y-2))
-            if x < 8:
-                movable.append((x+1, y-2))
-        elif koma == Koma.Gote_Kei:
-            if x > 0:
-                movable.append((x-1, y+2))
-            if x < 8:
-                movable.append((x+1, y+2))
-        elif koma == Koma.Sente_Gin:
-            if y > 0:
-                movable.append((x, y-1))
-            if y > 0 and x > 0:
-                movable.append((x-1, y-1))
-            if y > 0 and x < 8:
-                movable.append((x+1, y-1))
-            if y < 8 and x > 0:
-                movable.append((x-1, y+1))
-            if y < 8 and x < 8:
-                movable.append((x+1, y+1))
-        elif koma == Koma.Gote_Gin:
-            if y < 8:
-                movable.append((x, y+1))
-            if y < 8 and x > 0:
-                movable.append((x-1, y+1))
-            if y < 8 and x < 8:
-                movable.append((x+1, y+1))
-            if y > 0 and x > 0:
-                movable.append((x-1, y-1))
-            if y > 0 and x < 8:
-                movable.append((x+1, y-1))
-        elif koma in Koma.Sente_KinFamily:
-            if y > 0:
-                movable.append((x, y-1))
-            if y > 0 and x > 0:
-                movable.append((x-1, y-1))
-            if y > 0 and x < 8:
-                movable.append((x+1, y-1))
-            if x > 0:
-                movable.append((x-1, y))
-            if x < 8:
-                movable.append((x+1, y))
-            if y < 8:
-                movable.append((x, y+1))
-        elif koma in Koma.Gote_KinFamily:
-            if y < 8:
-                movable.append((x, y+1))
-            if y < 8 and x > 0:
-                movable.append((x-1, y+1))
-            if y < 8 and x < 8:
-                movable.append((x+1, y+1))
-            if x > 0:
-                movable.append((x-1, y))
-            if x < 8:
-                movable.append((x+1, y))
-            if y > 0:
-                movable.append((x, y-1))
+        elif abs(koma) == Koma.Sente_Kei:
+            movable.extend([(x+1, y-2*turn), (x-1, y-2*turn)])
+        elif abs(koma) == Koma.Sente_Gin:
+            movable.extend([(x, y-1*turn), (x-1, y-1*turn), (x+1, y-1*turn),
+                            (x-1, y+1*turn), (x+1, y+1*turn)])
+        elif abs(koma) in Koma.Sente_KinFamily:
+            movable.extend[(x, y-1*turn), (x-1, y-1*turn), (x+1, y-1*turn),
+                           (x-1, y), (x+1, y), (x, y+1*turn)]
         elif koma in Koma.HishaGroup:
             direction = []
             for i in range(1, y+1):
@@ -430,14 +361,8 @@ class Ban(QtGui.QWidget):
                 direction.append((x+i, y))
             movable.append(direction)
             if koma == Koma.Sente_NariHisha or koma == Koma.Gote_NariHisha:
-                if y > 0 and x > 0:
-                    movable.append([(x-1, y-1)])
-                if y > 0 and x < 8:
-                    movable.append([(x+1, y-1)])
-                if y < 8 and x > 0:
-                    movable.append([(x-1, y+1)])
-                if y < 8 and x < 8:
-                    movable.append([(x+1, y+1)])
+                movable.extend([[(x-1, y-1)], [(x+1, y-1)],
+                                [(x-1, y+1)], [(x+1, y+1)]])
         elif koma in Koma.KakuGroup:
             direction = []
             for i in range(1, min(x+1, y+1)):
@@ -456,31 +381,12 @@ class Ban(QtGui.QWidget):
                 direction.append((x+i, y+i))
             movable.append(direction)
             if koma == Koma.Sente_NariKaku or koma == Koma.Gote_NariKaku:
-                if y > 0:
-                    movable.append([(x, y-1)])
-                if y < 8:
-                    movable.append([(x, y+1)])
-                if x > 0:
-                    movable.append([(x-1, y)])
-                if x < 8:
-                    movable.append([(x+1, y)])
+                    movable.extend([[(x, y-1)], [(x, y+1)],
+                                    [(x-1, y)], [(x+1, y)]])
         elif koma == Koma.Sente_Gyoku or koma == Koma.Gote_Gyoku:
-            if y > 0:
-                movable.append((x, y-1))
-            if y < 8:
-                movable.append((x, y+1))
-            if x > 0:
-                movable.append((x-1, y))
-            if x < 8:
-                movable.append((x+1, y))
-            if y > 0 and x > 0:
-                movable.append((x-1, y-1))
-            if y > 0 and x < 8:
-                movable.append((x+1, y-1))
-            if y < 8 and x > 0:
-                movable.append((x-1, y+1))
-            if y < 8 and x < 8:
-                movable.append((x+1, y+1))
+                movable.extend([(x, y-1), (x, y+1), (x-1, y), (x+1, y)
+                                (x-1, y-1), (x+1, y-1),
+                                (x-1, y+1), (x+1, y+1)])
         return movable
 
     def setMochi(self, sente, gote):
@@ -521,53 +427,84 @@ class Ban(QtGui.QWidget):
 
 class Koma:
     Nothing = 0
-    Sente_Fu = 1
-    Sente_Kyou = 2
-    Sente_Kei = 3
-    Sente_Gin = 4
-    Sente_Hisha = 5
-    Sente_Kaku = 6
-    Sente_Kin = 7
-    Sente_NariFu = 8
-    Sente_NariKyou = 9
-    Sente_NariKei = 10
-    Sente_NariGin = 11
-    Sente_NariHisha = 12
-    Sente_NariKaku = 13
-    Sente_Gyoku = 14
-    Gote_Fu = 15
-    Gote_Kyou = 16
-    Gote_Kei = 17
-    Gote_Gin = 18
-    Gote_Hisha = 19
-    Gote_Kaku = 20
-    Gote_Kin = 21
-    Gote_NariFu = 22
-    Gote_NariKyou = 23
-    Gote_NariKei = 24
-    Gote_NariGin = 25
-    Gote_NariHisha = 26
-    Gote_NariKaku = 27
-    Gote_Gyoku = 28
+    Sente_Fu = 2
+    Sente_Kyou = 3
+    Sente_Kei = 4
+    Sente_Gin = 5
+    Sente_Hisha = 6
+    Sente_Kaku = 7
+    Sente_Kin = 8
+    Sente_NariFu = 9
+    Sente_NariKyou = 10
+    Sente_NariKei = 11
+    Sente_NariGin = 12
+    Sente_NariHisha = 13
+    Sente_NariKaku = 14
+    Sente_Gyoku = 15
+    Gote_Fu = -2
+    Gote_Kyou = -3
+    Gote_Kei = -4
+    Gote_Gin = -5
+    Gote_Hisha = -6
+    Gote_Kaku = -7
+    Gote_Kin = -8
+    Gote_NariFu = -9
+    Gote_NariKyou = -10
+    Gote_NariKei = -11
+    Gote_NariGin = -12
+    Gote_NariHisha = -13
+    Gote_NariKaku = -14
+    Gote_Gyoku = -15
     Sente_Koma = range(Sente_Fu, Sente_Gyoku+1)
-    Gote_Koma = range(Gote_Fu, Gote_Gyoku+1)
+    Gote_Koma = range(Gote_Fu, Gote_Gyoku-1, -1)
+    All = Sente_Koma + Gote_Koma
     Sente_Nareru = range(Sente_Fu, Sente_Kaku+1)
-    Gote_Nareru = range(Gote_Fu, Gote_Kaku+1)
+    Gote_Nareru = range(Gote_Fu, Gote_Kaku-1, -1)
     Nareru = Sente_Nareru + Gote_Nareru
     Sente_KinFamily = range(Sente_NariFu, Sente_NariGin+1) + [Sente_Kin]
-    Gote_KinFamily = range(Gote_NariFu, Gote_NariGin+1) + [Gote_Kin]
+    Gote_KinFamily = range(Gote_NariFu, Gote_NariGin-1, -1) + [Gote_Kin]
     HishaGroup = [Sente_Hisha, Sente_NariHisha, Gote_Hisha, Gote_NariHisha]
     KakuGroup = [Sente_Kaku, Sente_NariKaku, Gote_Kaku, Gote_NariKaku]
     Sente_Hashiri = [Sente_Kyou, Sente_Hisha, Sente_NariHisha, 
                      Sente_Kaku, Sente_NariKaku]
     Gote_Hashiri = [Gote_Kyou, Gote_Hisha, Gote_NariHisha,
                     Gote_Kaku, Gote_NariKaku]
+    Hashiri = Sente_Hashiri + Gote_Hashiri
     Sente_Available = Gote_Koma + [Nothing]
     Gote_Available = Sente_Koma + [Nothing]
 
+    @classmethod
+    def changePlayer(self, koma):
+        if abs(koma) > 8:
+            return -koma - 7
+        else:
+            return -koma
+
+    @classmethod
+    def naru(self, koma, turn):
+        return koma + 7*turn
+
+    @classmethod
+    def teki(self, koma):
+        if koma > 0:
+            return Gote_Koma
+        elif koma < 0:
+            return Sente_Koma
+
+    @classmethod
+    def available(self, koma):
+        if koma > 0:
+            return Sente_Available
+        elif koma < 0:
+            return Gote_Available
+
 class Turn:
-    Sente = 30
-    Gote = 31
+    Sente = 1
+    Gote = -1
+
+    @classmethod
+    def changeTurn(self, turn):
+        return turn * -1
 
 class Pictures:
     Path = {
