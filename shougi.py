@@ -1,99 +1,58 @@
 import sys
 from PyQt4 import QtCore, QtGui
 
-class Sente_Mochi(QtGui.QWidget):
-    def __init__(self, ban):
-        super(Sente_Mochi, self).__init__()
-        self.koma = {Koma.Sente_Fu: 0,
-                     Koma.Sente_Kyou: 0,
-                     Koma.Sente_Kei: 0,
-                     Koma.Sente_Gin: 0,
-                     Koma.Sente_Kin: 0,
-                     Koma.Sente_Hisha: 0,
-                     Koma.Sente_Kaku: 0}
-        self.select = Koma.Nothing
+class Mochi(QtGui.QWidget):
+    def __init__(self, ban, player):
+        super(Mochi, self).__init__()
         self.ban = ban
-        self.location = {Koma.Sente_Fu: 2,
-                         Koma.Sente_Kyou: 3,
-                         Koma.Sente_Kei: 4,
-                         Koma.Sente_Gin: 5,
-                         Koma.Sente_Kin: 6,
-                         Koma.Sente_Hisha: 7,
-                         Koma.Sente_Kaku: 8}
-    
-    def paintEvent(self, e):
-        width = self.width()-1
-        height = self.height()-1
-        self.w = width/9.0
-        qp = QtGui.QPainter()
-        qp.begin(self)
-        # draw select
-        if self.select != Koma.Nothing:
-            qp.setBrush(QtGui.QColor(204,255,255))
-            qp.drawRect(self.location[self.select]*self.w, 0, self.w, height)
-        # draw lines
-        qp.setPen(QtCore.Qt.black)
-        qp.drawLine(0, 0, width, 0)
-        qp.drawLine(0, 0, 0, height)
-        qp.drawLine(0, height, width, height)
-        qp.drawLine(width, 0, width, height)
-        # draw images
-        qp.drawImage(QtCore.QRect(0, 0, 2*self.w, height),
-                     QtGui.QImage(Pictures.Path['Sente']))
-        for kind in self.koma.keys():
-            if self.koma[kind] > 0:
-                qp.drawImage(QtCore.QRect(self.location[kind]*self.w, 0,
-                                          self.w, height),
-                             QtGui.QImage(Pictures.Path[kind]))
-                if self.koma[kind] > 1:
-                    qp.drawText(QtCore.QRectF(self.location[kind]*self.w, 0,
-                                              self.w, height),
-                                str(self.koma[kind]))
-        qp.end()
-
-    def mousePressEvent(self, e):
-        if e.button() == QtCore.Qt.LeftButton:
-            x = int(e.x()//self.w)
-            if self.select == Koma.Nothing and self.ban.checkTurn(Turn.Sente):
-                if x > 1 and self.koma[x-1] > 0:
-                    self.select = x-1
-                    self.update()
-                    self.ban.calcCandidates(self.select, True)
-            else:
-                self.ban.cancelSelect()
-
-    def resetSelect(self):
         self.select = Koma.Nothing
-        self.update()
-
-    def addKoma(self, koma):
-        self.koma[koma] += 1
-        self.update()
-
-    def subKoma(self, koma):
-        self.koma[koma] -= 1
-        self.select = Koma.Nothing
-        self.update()
-
-class Gote_Mochi(QtGui.QWidget):
-    def __init__(self, ban):
-        super(Gote_Mochi, self).__init__()
-        self.koma = {Koma.Gote_Fu: 0,
-                     Koma.Gote_Kyou: 0,
-                     Koma.Gote_Kei: 0,
-                     Koma.Gote_Gin: 0,
-                     Koma.Gote_Kin: 0,
-                     Koma.Gote_Hisha: 0,
-                     Koma.Gote_Kaku: 0}
-        self.select = Koma.Nothing
-        self.ban = ban
-        self.location = {Koma.Gote_Fu: 6,
-                         Koma.Gote_Kyou: 5,
-                         Koma.Gote_Kei: 4,
-                         Koma.Gote_Gin: 3,
-                         Koma.Gote_Kin: 2,
-                         Koma.Gote_Hisha: 1,
+        self.player = player
+        if player == Turn.Sente:
+            self.koma = {Koma.Sente_Fu: 0,
+                         Koma.Sente_Kyou: 0,
+                         Koma.Sente_Kei: 0,
+                         Koma.Sente_Gin: 0,
+                         Koma.Sente_Kin: 0,
+                         Koma.Sente_Hisha: 0,
+                         Koma.Sente_Kaku: 0}
+            self.location1 = {'player': 0,
+                             Koma.Sente_Fu: 2,
+                             Koma.Sente_Kyou: 3,
+                             Koma.Sente_Kei: 4,
+                             Koma.Sente_Gin: 5,
+                             Koma.Sente_Kin: 6,
+                             Koma.Sente_Hisha: 7,
+                             Koma.Sente_Kaku: 8}
+            self.location2 = {2: Koma.Sente_Fu,
+                              3: Koma.Sente_Kyou,
+                              4: Koma.Sente_Kei,
+                              5: Koma.Sente_Gin,
+                              6: Koma.Sente_Kin,
+                              7: Koma.Sente_Hisha,
+                              8: Koma.Sente_Kaku}
+        elif player == Turn.Gote:
+            self.koma = {Koma.Gote_Fu: 0,
+                         Koma.Gote_Kyou: 0,
+                         Koma.Gote_Kei: 0,
+                         Koma.Gote_Gin: 0,
+                         Koma.Gote_Kin: 0,
+                         Koma.Gote_Hisha: 0,
                          Koma.Gote_Kaku: 0}
+            self.location1 = {'player': 7,
+                              Koma.Gote_Fu: 6,
+                              Koma.Gote_Kyou: 5,
+                              Koma.Gote_Kei: 4,
+                              Koma.Gote_Gin: 3,
+                              Koma.Gote_Kin: 2,
+                              Koma.Gote_Hisha: 1,
+                              Koma.Gote_Kaku: 0}
+            self.location2 = {6: Koma.Gote_Fu,
+                              5: Koma.Gote_Kyou,
+                              4: Koma.Gote_Kei,
+                              3: Koma.Gote_Gin,
+                              2: Koma.Gote_Kin,
+                              1: Koma.Gote_Hisha,
+                              0: Koma.Gote_Kaku}
     
     def paintEvent(self, e):
         width = self.width()-1
@@ -104,7 +63,8 @@ class Gote_Mochi(QtGui.QWidget):
         # draw select
         if self.select != Koma.Nothing:
             qp.setBrush(QtGui.QColor(204,255,255))
-            qp.drawRect(self.location[self.select]*self.w, 0, self.w, height)
+            qp.drawRect(self.location1[self.select]*self.w, 0,
+                        self.w, height)
         # draw lines
         qp.setPen(QtCore.Qt.black)
         qp.drawLine(0, 0, width, 0)
@@ -112,25 +72,29 @@ class Gote_Mochi(QtGui.QWidget):
         qp.drawLine(0, height, width, height)
         qp.drawLine(width, 0, width, height)
         # draw images
-        qp.drawImage(QtCore.QRect(7*self.w, 0, 2*self.w, height),
-                     QtGui.QImage(Pictures.Path['Gote']))
+        qp.drawImage(QtCore.QRect(self.location1['player']*self.w, 0,
+                                  2*self.w, height),
+                     QtGui.QImage(Pictures.Path[self.player]))
         for kind in self.koma.keys():
             if self.koma[kind] > 0:
-                qp.drawImage(QtCore.QRect(self.location[kind]*self.w, 0,
+                qp.drawImage(QtCore.QRect(self.location1[kind]*self.w, 0,
                                           self.w, height),
                              QtGui.QImage(Pictures.Path[kind]))
                 if self.koma[kind] > 1:
-                    qp.drawText(QtCore.QRectF(self.location[kind]*self.w, 0,
-                                              0.2*self.w, 0.2*height),
+                    qp.drawText(QtCore.QRectF(self.location1[kind]*self.w, 0,
+                                              self.w,height),
                                 str(self.koma[kind]))
         qp.end()
 
     def mousePressEvent(self, e):
         if e.button() == QtCore.Qt.LeftButton:
             x = int(e.x()//self.w)
-            if self.select == Koma.Nothing and self.ban.checkTurn(Turn.Gote):
-                if x < 7 and self.koma[21-x] > 0:
-                    self.select = 21-x
+            if self.select == Koma.Nothing and \
+                    self.ban.checkTurn(self.player):
+                if x in range(min(self.location2.keys()),
+                              max(self.location2.keys())+1) and \
+                        self.koma[self.location2[x]] > 0:
+                    self.select = self.location2[x]
                     self.update()
                     self.ban.calcCandidates(self.select, True)
             else:
@@ -275,7 +239,11 @@ class Ban(QtGui.QWidget):
             x = int(e.x()//self.w)
             y = int(e.y()//self.h)
             # select koma on ban
-            if self.select == [] and self.state[x][y]-self.turn*(Koma.Gote_Fu-Koma.Sente_Fu) in Koma.Sente_Koma:
+            if self.select == [] and \
+                    (self.state[x][y] in Koma.Sente_Koma and \
+                         self.turn == Turn.Sente or \
+                         self.state[x][y] in Koma.Gote_Koma and \
+                         self.turn == Turn.Gote):
                 self.select = [x, y]
                 self.calcCandidates(
                     self.state[x][y],
@@ -641,8 +609,8 @@ class Koma:
     Gote_Available = Sente_Koma + [Nothing]
 
 class Turn:
-    Sente = 0
-    Gote = 1
+    Sente = 30
+    Gote = 31
 
 class Pictures:
     Path = {
@@ -674,8 +642,8 @@ class Pictures:
         Koma.Gote_NariHisha: './Pictures/Gote_NariHisha.png',
         Koma.Gote_NariKaku: './Pictures/Gote_NariKaku.png',
         Koma.Gote_Gyoku: './Pictures/Gote_Gyoku.png',
-        'Sente': './Pictures/Sente.png',
-        'Gote': './Pictures/Gote.png' }
+        Turn.Sente: './Pictures/Sente.png',
+        Turn.Gote: './Pictures/Gote.png' }
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
@@ -687,8 +655,8 @@ class Window(QtGui.QMainWindow):
         self.widget = QtGui.QWidget()
         self.grid = QtGui.QGridLayout(self.widget)
         self.ban = Ban()
-        self.sente_mochi = Sente_Mochi(self.ban)
-        self.gote_mochi = Gote_Mochi(self.ban)
+        self.sente_mochi = Mochi(self.ban, Turn.Sente)
+        self.gote_mochi = Mochi(self.ban, Turn.Gote)
         self.ban.setMochi(self.sente_mochi, self.gote_mochi)
         self.grid.addWidget(self.gote_mochi, 0, 0, 1, 1)
         self.grid.addWidget(self.ban, 1, 0, 9, 1)
