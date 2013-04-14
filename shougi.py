@@ -201,10 +201,7 @@ class Ban(QtGui.QWidget):
             y = int(e.y()//self.h)
             # select koma on ban
             if self.select == () and \
-                    (self.state[(x, y)] in Koma.Sente_Koma and \
-                         self.turn == Turn.Sente or \
-                         self.state[(x, y)] in Koma.Gote_Koma and \
-                         self.turn == Turn.Gote):
+                    self.state[(x, y)] in Koma.jigoma(self.turn):
                 self.select = (x, y)
                 self.calcCandidates(self.state[(x, y)], False, x, y)
                 self.update()
@@ -219,16 +216,11 @@ class Ban(QtGui.QWidget):
                         self.gote_mochi.addKoma(
                             Koma.changePlayer(self.state[(x, y)]))
                     if self.state[self.select] in Koma.Nareru \
-                            and (self.turn == Turn.Sente and y < 3 or \
-                                     self.turn == Turn.Gote and y > 5):
-                        if y == 0 and (self.state[self.select] == Koma.Sente_Fu or self.state[self.select] == Koma.Sente_Kyou) or \
-                                y < 2 and self.state[self.select] == Koma.Sente_Kei or \
-                                y == 8 and (self.state[self.select] == Koma.Gote_Fu or self.state[self.select] == Koma.Gote_Kyou) or \
-                                y > 6 and self.state[self.select] == Koma.Gote_Kei:
-                                
-                            self.state[(x, y)] = Koma.naru(self.state[self.select], self.turn)
-                        elif self.askNari():
-                            self.state[(x, y)] = Koma.naru(self.state[self.select], self.turn)
+                            and y in Jin.tekijin(self.turn):
+                        if Jin.naru(self.state[self.select], y) or \
+                                self.askNari():
+                            self.state[(x, y)] = Koma.naru(
+                                self.state[self.select], self.turn)
                         else:
                             self.state[(x, y)] = self.state[self.select]
                     else:
@@ -271,7 +263,6 @@ class Ban(QtGui.QWidget):
                     if masu[0] in range(9) and masu[1] in range(9):
                         if self.state[masu] in Koma.available(koma):
                             self.candidates.append(masu)
-
         # mochi koma
         else:
             if koma in Koma.Sente_Koma:
@@ -458,6 +449,8 @@ class Koma:
     Sente_Koma = range(Sente_Fu, Sente_Gyoku+1)
     Gote_Koma = range(Gote_Fu, Gote_Gyoku-1, -1)
     All = Sente_Koma + Gote_Koma
+    Sente_FuKyou = [Sente_Fu] + [Sente_Kyou]
+    Gote_FuKyou = [Gote_Fu] + [Gote_Kyou]
     Sente_Nareru = range(Sente_Fu, Sente_Kaku+1)
     Gote_Nareru = range(Gote_Fu, Gote_Kaku-1, -1)
     Nareru = Sente_Nareru + Gote_Nareru
@@ -487,16 +480,23 @@ class Koma:
     @classmethod
     def teki(self, koma):
         if koma > 0:
-            return Gote_Koma
+            return self.Gote_Koma
         elif koma < 0:
-            return Sente_Koma
+            return self.Sente_Koma
 
     @classmethod
     def available(self, koma):
         if koma > 0:
-            return Sente_Available
+            return self.Sente_Available
         elif koma < 0:
-            return Gote_Available
+            return self.Gote_Available
+
+    @classmethod
+    def jigoma(self, turn):
+        if turn == Turn.Sente:
+            return self.Sente_Koma
+        elif turn == Turn.Gote:
+            return self.Gote_Koma
 
 class Turn:
     Sente = 1
@@ -505,6 +505,32 @@ class Turn:
     @classmethod
     def changeTurn(self, turn):
         return turn * -1
+
+class Jin:
+    Sente_Tekijin = range(0, 3)
+    Gote_Tekijin = range(6, 9)
+    Sente_FuKyouNaru = 0
+    Gote_FuKyouNaru = 8
+    Sente_KeiNaru = range(0, 2)
+    Gote_KeiNaru = range(7, 9)
+
+    @classmethod
+    def tekijin(self, turn):
+        if turn == Turn.Sente:
+            return self.Sente_Tekijin
+        elif turn == Turn.Gote:
+            return self.Gote_Tekijin
+
+    @classmethod
+    def naru(self, koma, y):
+        if koma in Koma.Sente_FuKyou and y == self.Sente_FuKyouNaru or \
+                koma in Koma.Gote_FuKyou and y == self.Gote_FuKyouNaru or \
+                koma == Koma.Sente_Kei and y in self.Sente_KeiNaru or \
+                koma == Koma.Gote_Kei and y in self.Gote_KeiNaru:
+            return True
+        else:
+            return False
+        
 
 class Pictures:
     Path = {
