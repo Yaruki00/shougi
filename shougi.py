@@ -162,6 +162,9 @@ class Ban(QtGui.QWidget):
         self.select = ()
         self.mochi_select = Koma.Nothing
         self.candidates = []
+        self.kiki = self.calcKiki()
+        self.vCandidates = True
+        self.vKiki = False
 
     def paintEvent(self, e):
         width = self.width()-1
@@ -176,11 +179,19 @@ class Ban(QtGui.QWidget):
             qp.drawRect(self.select[0]*self.w, self.select[1]*self.h,
                         self.w, self.h)
         # draw candidates
-        if self.candidates != []:
+        if self.vCandidates and self.candidates != []:
             qp.setBrush(QtGui.QColor(204,255,204))
             for candidate in self.candidates:
                 qp.drawRect(candidate[0]*self.w, candidate[1]*self.h,
                         self.w, self.h)
+        # draw kiki
+        if self.vKiki and self.kiki != {}:
+            qp.setPen(QtCore.Qt.red)
+            for masu in self.kiki.keys():
+                qp.drawText(QtCore.QRectF(masu[0]*self.w, masu[1]*self.h,
+                                          self.w, height),
+                            str(self.kiki[masu][Turn.Sente]) + ":" + \
+                                str(self.kiki[masu][Turn.Gote]))
         # draw lines
         qp.setPen(QtCore.Qt.black)
         for i in range(10):
@@ -228,6 +239,7 @@ class Ban(QtGui.QWidget):
                     else:
                         self.state[(x, y)] = self.state[self.select]
                     self.state[self.select] = Koma.Nothing
+                    self.kiki = self.calcKiki()
                     self.select = ()
                 # put
                 else:
@@ -236,6 +248,7 @@ class Ban(QtGui.QWidget):
                         self.sente_mochi.subKoma(self.mochi_select)
                     else:
                         self.gote_mochi.subKoma(self.mochi_select)
+                    self.kiki = self.calcKiki()
                     self.mochi_select = Koma.Nothing
                 # common
                 self.candidates = []
@@ -315,6 +328,42 @@ class Ban(QtGui.QWidget):
             self.mochi_select = koma
         return candidates
 
+    def calcKiki(self):
+        kiki = {}
+        for i in range(9):
+            for j in range(9):
+                kiki[(i, j)] = {Turn.Sente: 0, Turn.Gote: 0}
+        for i in range(9):
+            for j in range(9):
+                if self.state[(i, j)] in Koma.Sente_Koma:
+                    turn = Turn.Sente
+                elif self.state[(i, j)] in Koma.Gote_Koma:
+                    turn = Turn.Gote
+                for masu in self.calcKomaKiki(self.state[(i, j)], i, j):
+                    kiki[masu][turn] += 1
+        return kiki
+
+    def calcKomaKiki(self, koma, x, y):
+        komaKiki = []
+        movable = Koma.calcMovable(koma, x, y)
+        if koma in Koma.Hashiri:
+            for direction in movable:
+                for masu in direction:
+                    if masu[0] in range(9) and masu[1] in range(9):
+                        if self.state[masu] == Koma.Nothing:
+                            komaKiki.append(masu)
+                        elif self.state[masu] in Koma.All:
+                            komaKiki.append(masu)
+                            break
+                        else:
+                            break
+        else:
+            for masu in movable:
+                if masu[0] in range(9) and masu[1] in range(9):
+                    if self.state[masu] in Koma.All + [Koma.Nothing]:
+                        komaKiki.append(masu)
+        return komaKiki
+
     def selectMochi(self, koma):
         self.candidates = self.calcCandidates(koma, True)
         self.update()
@@ -354,6 +403,39 @@ class Ban(QtGui.QWidget):
             return True
         else:
             return False
+
+    def setVCandidates(self, boolean):
+        self.vCandidates = boolean
+        self.update()
+
+    def setVKiki(self, boolean):
+        self.vKiki = boolean
+        self.update()
+
+class SideMenu(QtGui.QWidget):
+    def __init__(self, ban):
+        super(SideMenu, self).__init__()
+        self.ban = ban
+        self.form = QtGui.QFormLayout(self)
+        self.vCandidates = QtGui.QCheckBox('visualize candidates')
+        self.vCandidates.setCheckState(QtCore.Qt.Checked)
+        self.vCandidates.stateChanged.connect(self.vCandidatesChanged)
+        self.vKiki = QtGui.QCheckBox('visualize kiki')
+        self.vKiki.stateChanged.connect(self.vKikiChanged)
+        self.form.addRow(self.vCandidates)
+        self.form.addRow(self.vKiki)
+
+    def vCandidatesChanged(self):
+        if self.vCandidates.checkState() == QtCore.Qt.Checked:
+            self.ban.setVCandidates(True)
+        elif self.vCandidates.checkState() == QtCore.Qt.Unchecked:
+            self.ban.setVCandidates(False)
+
+    def vKikiChanged(self):
+        if self.vKiki.checkState() == QtCore.Qt.Checked:
+            self.ban.setVKiki(True)
+        elif self.vKiki.checkState() == QtCore.Qt.Unchecked:
+            self.ban.setVKiki(False)
 
 class Koma:
     Nothing = 0
@@ -462,8 +544,8 @@ class Koma:
             movable.extend([(x, y-1*turn), (x-1, y-1*turn), (x+1, y-1*turn),
                             (x-1, y+1*turn), (x+1, y+1*turn)])
         elif abs(koma) in self.Sente_KinFamily:
-            movable.extend[(x, y-1*turn), (x-1, y-1*turn), (x+1, y-1*turn),
-                           (x-1, y), (x+1, y), (x, y+1*turn)]
+            movable.extend([(x, y-1*turn), (x-1, y-1*turn), (x+1, y-1*turn),
+                           (x-1, y), (x+1, y), (x, y+1*turn)])
         elif koma in self.HishaGroup:
             direction = []
             for i in range(1, y+1):
@@ -505,7 +587,7 @@ class Koma:
                     movable.extend([[(x, y-1)], [(x, y+1)],
                                     [(x-1, y)], [(x+1, y)]])
         elif koma == self.Sente_Gyoku or koma == self.Gote_Gyoku:
-                movable.extend([(x, y-1), (x, y+1), (x-1, y), (x+1, y)
+                movable.extend([(x, y-1), (x, y+1), (x-1, y), (x+1, y),
                                 (x-1, y-1), (x+1, y-1),
                                 (x-1, y+1), (x+1, y+1)])
         return movable
@@ -587,12 +669,14 @@ class Window(QtGui.QMainWindow):
         self.widget = QtGui.QWidget()
         self.grid = QtGui.QGridLayout(self.widget)
         self.ban = Ban()
+        self.sideMenu = SideMenu(self.ban)
         self.sente_mochi = Mochi(self.ban, Turn.Sente)
         self.gote_mochi = Mochi(self.ban, Turn.Gote)
         self.ban.setMochi(self.sente_mochi, self.gote_mochi)
-        self.grid.addWidget(self.gote_mochi, 0, 0, 1, 1)
-        self.grid.addWidget(self.ban, 1, 0, 9, 1)
-        self.grid.addWidget(self.sente_mochi, 11, 0, 1, 1)
+        self.grid.addWidget(self.gote_mochi, 0, 0, 1, 8)
+        self.grid.addWidget(self.ban, 1, 0, 9, 8)
+        self.grid.addWidget(self.sente_mochi, 11, 0, 1, 8)
+        self.grid.addWidget(self.sideMenu, 0, 8, 11, 1)
         self.setCentralWidget(self.widget)
 
 def main():
