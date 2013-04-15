@@ -97,7 +97,7 @@ class Mochi(QtGui.QWidget):
                         self.koma[self.location2[x]] > 0:
                     self.select = self.location2[x]
                     self.update()
-                    self.ban.calcCandidates(self.select, True)
+                    self.ban.selectMochi(self.select)
             else:
                 self.ban.cancelSelect()
 
@@ -192,7 +192,8 @@ class Ban(QtGui.QWidget):
                 if self.state[(i, j)] != Koma.Nothing:
                     qp.drawImage(QtCore.QRect(i*self.w, j*self.h,
                                               self.w, self.h),
-                                 QtGui.QImage(Pictures.Path[self.state[(i, j)]]))
+                                 QtGui.QImage(
+                            Pictures.Path[self.state[(i, j)]]))
         qp.end()
         
     def mousePressEvent(self, e):
@@ -203,7 +204,8 @@ class Ban(QtGui.QWidget):
             if self.select == () and \
                     self.state[(x, y)] in Koma.jigoma(self.turn):
                 self.select = (x, y)
-                self.calcCandidates(self.state[(x, y)], False, x, y)
+                self.candidates = \
+                    self.calcCandidates(self.state[(x, y)], False, x, y)
                 self.update()
             # move or put koma
             elif (x, y) in self.candidates:
@@ -244,17 +246,18 @@ class Ban(QtGui.QWidget):
                 self.cancelSelect()
 
     def calcCandidates(self, koma, mochi, x=0, y=0):
+        candidates = []
         # koma on ban
         if mochi == False:
-            movable = self.calcMovable(koma, self.turn, x, y)
+            movable = Koma.calcMovable(koma, x, y)
             if koma in Koma.Hashiri:
                 for direction in movable:
                     for masu in direction:
                         if masu[0] in range(9) and masu[1] in range(9):
                             if self.state[masu] == Koma.Nothing:
-                                self.candidates.append(masu)
+                                candidates.append(masu)
                             elif self.state[masu] in Koma.teki(koma):
-                                self.candidates.append(masu)
+                                candidates.append(masu)
                                 break
                             else:
                                 break
@@ -262,7 +265,7 @@ class Ban(QtGui.QWidget):
                 for masu in movable:
                     if masu[0] in range(9) and masu[1] in range(9):
                         if self.state[masu] in Koma.available(koma):
-                            self.candidates.append(masu)
+                            candidates.append(masu)
         # mochi koma
         else:
             if koma in Koma.Sente_Koma:
@@ -275,7 +278,7 @@ class Ban(QtGui.QWidget):
                             elif self.state[(i, j)] == Koma.Sente_Fu:
                                 row = []
                                 break
-                        self.candidates.extend(row)
+                        candidates.extend(row)
                 else:
                     if koma == Koma.Sente_Kyou:
                         start = 1
@@ -286,7 +289,7 @@ class Ban(QtGui.QWidget):
                     for i in range(9):
                         for j in range(start, 9):
                             if self.state[(i, j)] == Koma.Nothing:
-                                self.candidates.append((i, j))
+                                candidates.append((i, j))
             else:
                 if koma == Koma.Gote_Fu:
                     for i in range(9):
@@ -297,7 +300,7 @@ class Ban(QtGui.QWidget):
                             elif self.state[(i, j)] == Koma.Gote_Fu:
                                 row = []
                                 break
-                        self.candidates.extend(row)
+                        candidates.extend(row)
                 else:
                     if koma == Koma.Gote_Kyou:
                         end = 8
@@ -308,77 +311,13 @@ class Ban(QtGui.QWidget):
                     for i in range(9):
                         for j in range(0, end):
                             if self.state[(i, j)] == Koma.Nothing:
-                                self.candidates.append((i, j))
+                                candidates.append((i, j))
             self.mochi_select = koma
-            self.update()
+        return candidates
 
-    def calcMovable(self, koma, turn, x, y):
-        movable = []
-        if abs(koma) == Koma.Sente_Fu:
-            movable.append((x, y-1*turn))
-        elif koma == Koma.Sente_Kyou:
-            direction = []
-            for i in range(1, y+1):
-                direction.append((x, y-i))
-            movable.append(direction)
-        elif koma == Koma.Gote_Kyou:
-            direction = []
-            for i in range(1, 9-y):
-                direction.append((x, y+i))
-            movable.append(direction)
-        elif abs(koma) == Koma.Sente_Kei:
-            movable.extend([(x+1, y-2*turn), (x-1, y-2*turn)])
-        elif abs(koma) == Koma.Sente_Gin:
-            movable.extend([(x, y-1*turn), (x-1, y-1*turn), (x+1, y-1*turn),
-                            (x-1, y+1*turn), (x+1, y+1*turn)])
-        elif abs(koma) in Koma.Sente_KinFamily:
-            movable.extend[(x, y-1*turn), (x-1, y-1*turn), (x+1, y-1*turn),
-                           (x-1, y), (x+1, y), (x, y+1*turn)]
-        elif koma in Koma.HishaGroup:
-            direction = []
-            for i in range(1, y+1):
-                direction.append((x, y-i))
-            movable.append(direction)
-            direction = []
-            for i in range(1, 9-y):
-                direction.append((x, y+i))
-            movable.append(direction)
-            direction = []
-            for i in range(1, x+1):
-                direction.append((x-i, y))
-            movable.append(direction)
-            direction = []
-            for i in range(1, 9-x):
-                direction.append((x+i, y))
-            movable.append(direction)
-            if koma == Koma.Sente_NariHisha or koma == Koma.Gote_NariHisha:
-                movable.extend([[(x-1, y-1)], [(x+1, y-1)],
-                                [(x-1, y+1)], [(x+1, y+1)]])
-        elif koma in Koma.KakuGroup:
-            direction = []
-            for i in range(1, min(x+1, y+1)):
-                direction.append((x-i, y-i))
-            movable.append(direction)
-            direction = []
-            for i in range(1, min(x+1, 9-y)):
-                direction.append((x-i, y+i))
-            movable.append(direction)
-            direction = []
-            for i in range(1, min(9-x, y+1)):
-                direction.append((x+i, y-i))
-            movable.append(direction)
-            direction = []
-            for i in range(1, min(9-x, 9-y)):
-                direction.append((x+i, y+i))
-            movable.append(direction)
-            if koma == Koma.Sente_NariKaku or koma == Koma.Gote_NariKaku:
-                    movable.extend([[(x, y-1)], [(x, y+1)],
-                                    [(x-1, y)], [(x+1, y)]])
-        elif koma == Koma.Sente_Gyoku or koma == Koma.Gote_Gyoku:
-                movable.extend([(x, y-1), (x, y+1), (x-1, y), (x+1, y)
-                                (x-1, y-1), (x+1, y-1),
-                                (x-1, y+1), (x+1, y+1)])
-        return movable
+    def selectMochi(self, koma):
+        self.candidates = self.calcCandidates(koma, True)
+        self.update()
 
     def setMochi(self, sente, gote):
         self.sente_mochi = sente
@@ -497,6 +436,79 @@ class Koma:
             return self.Sente_Koma
         elif turn == Turn.Gote:
             return self.Gote_Koma
+
+    @classmethod
+    def calcMovable(self, koma, x, y):
+        movable = []
+        if koma in self.Sente_Koma:
+            turn = Turn.Sente
+        elif koma in self.Gote_Koma:
+            turn = Turn.Gote
+        if abs(koma) == self.Sente_Fu:
+            movable.append((x, y-1*turn))
+        elif koma == self.Sente_Kyou:
+            direction = []
+            for i in range(1, y+1):
+                direction.append((x, y-i))
+            movable.append(direction)
+        elif koma == self.Gote_Kyou:
+            direction = []
+            for i in range(1, 9-y):
+                direction.append((x, y+i))
+            movable.append(direction)
+        elif abs(koma) == self.Sente_Kei:
+            movable.extend([(x+1, y-2*turn), (x-1, y-2*turn)])
+        elif abs(koma) == self.Sente_Gin:
+            movable.extend([(x, y-1*turn), (x-1, y-1*turn), (x+1, y-1*turn),
+                            (x-1, y+1*turn), (x+1, y+1*turn)])
+        elif abs(koma) in self.Sente_KinFamily:
+            movable.extend[(x, y-1*turn), (x-1, y-1*turn), (x+1, y-1*turn),
+                           (x-1, y), (x+1, y), (x, y+1*turn)]
+        elif koma in self.HishaGroup:
+            direction = []
+            for i in range(1, y+1):
+                direction.append((x, y-i))
+            movable.append(direction)
+            direction = []
+            for i in range(1, 9-y):
+                direction.append((x, y+i))
+            movable.append(direction)
+            direction = []
+            for i in range(1, x+1):
+                direction.append((x-i, y))
+            movable.append(direction)
+            direction = []
+            for i in range(1, 9-x):
+                direction.append((x+i, y))
+            movable.append(direction)
+            if koma == self.Sente_NariHisha or koma == self.Gote_NariHisha:
+                movable.extend([[(x-1, y-1)], [(x+1, y-1)],
+                                [(x-1, y+1)], [(x+1, y+1)]])
+        elif koma in self.KakuGroup:
+            direction = []
+            for i in range(1, min(x+1, y+1)):
+                direction.append((x-i, y-i))
+            movable.append(direction)
+            direction = []
+            for i in range(1, min(x+1, 9-y)):
+                direction.append((x-i, y+i))
+            movable.append(direction)
+            direction = []
+            for i in range(1, min(9-x, y+1)):
+                direction.append((x+i, y-i))
+            movable.append(direction)
+            direction = []
+            for i in range(1, min(9-x, 9-y)):
+                direction.append((x+i, y+i))
+            movable.append(direction)
+            if koma == self.Sente_NariKaku or koma == self.Gote_NariKaku:
+                    movable.extend([[(x, y-1)], [(x, y+1)],
+                                    [(x-1, y)], [(x+1, y)]])
+        elif koma == self.Sente_Gyoku or koma == self.Gote_Gyoku:
+                movable.extend([(x, y-1), (x, y+1), (x-1, y), (x+1, y)
+                                (x-1, y-1), (x+1, y-1),
+                                (x-1, y+1), (x+1, y+1)])
+        return movable
 
 class Turn:
     Sente = 1
