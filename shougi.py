@@ -117,6 +117,7 @@ class Mochi(QtGui.QWidget):
 class Ban(QtGui.QWidget):
     def __init__(self):
         super(Ban, self).__init__()
+        self.resize(660, 600)
         self.state = {}
         for i in range(9):
             for j in range(9):
@@ -228,8 +229,9 @@ class Ban(QtGui.QWidget):
                     elif self.state[(x, y)] in Koma.Sente_Koma:
                         self.gote_mochi.addKoma(
                             Koma.changePlayer(self.state[(x, y)]))
-                    if self.state[self.select] in Koma.Nareru \
-                            and y in Jin.tekijin(self.turn):
+                    if self.state[self.select] in Koma.Nareru and \
+                            ( y in Jin.tekijin(self.turn) or \
+                                  self.select[1] in Jin.tekijin(self.turn)):
                         if Jin.naru(self.state[self.select], y) or \
                                 self.askNari():
                             self.state[(x, y)] = Koma.naru(
@@ -412,9 +414,9 @@ class Ban(QtGui.QWidget):
         self.vKiki = boolean
         self.update()
 
-class SideMenu(QtGui.QWidget):
+class Option(QtGui.QWidget):
     def __init__(self, ban):
-        super(SideMenu, self).__init__()
+        super(Option, self).__init__()
         self.ban = ban
         self.form = QtGui.QFormLayout(self)
         self.vCandidates = QtGui.QCheckBox('visualize candidates')
@@ -436,6 +438,23 @@ class SideMenu(QtGui.QWidget):
             self.ban.setVKiki(True)
         elif self.vKiki.checkState() == QtCore.Qt.Unchecked:
             self.ban.setVKiki(False)
+
+class Kifu(QtGui.QTreeWidget):
+    def __init__(self):
+        super(Kifu, self).__init__()
+
+class Operation(QtGui.QWidget):
+    def __init__(self, ban):
+        super(Operation, self).__init__()
+        self.hbox = QtGui.QHBoxLayout(self)
+        self.first = QtGui.QPushButton('<<')
+        self.previous = QtGui.QPushButton('<')
+        self.next = QtGui.QPushButton('>')
+        self.last = QtGui.QPushButton('>>')
+        self.hbox.addWidget(self.first)
+        self.hbox.addWidget(self.previous)
+        self.hbox.addWidget(self.next)
+        self.hbox.addWidget(self.last)
 
 class Koma:
     Nothing = 0
@@ -490,7 +509,10 @@ class Koma:
     @classmethod
     def changePlayer(self, koma):
         if abs(koma) > 8:
-            return -koma - 7
+            if koma > 0:
+                return -(koma - 7)
+            elif koma < 0:
+                return -koma - 7
         else:
             return -koma
 
@@ -662,21 +684,34 @@ class Pictures:
 class Window(QtGui.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
-        # window setting
-        self.setGeometry(0, 0, 800, 1000)
+        self.setGeometry(0, 0, 800, 800)
         self.setWindowTitle('HeppokoShougi')
-        # central widget setting
-        self.widget = QtGui.QWidget()
-        self.grid = QtGui.QGridLayout(self.widget)
+        self.leftWidget = QtGui.QWidget()
+        self.leftWidget.setFixedSize(660, 800)
+        self.vboxL = QtGui.QVBoxLayout(self.leftWidget)
         self.ban = Ban()
-        self.sideMenu = SideMenu(self.ban)
+        self.ban.setFixedSize(600, 600)
         self.sente_mochi = Mochi(self.ban, Turn.Sente)
+        self.sente_mochi.setFixedSize(600, 70)
         self.gote_mochi = Mochi(self.ban, Turn.Gote)
+        self.gote_mochi.setFixedSize(600, 70)
         self.ban.setMochi(self.sente_mochi, self.gote_mochi)
-        self.grid.addWidget(self.gote_mochi, 0, 0, 1, 8)
-        self.grid.addWidget(self.ban, 1, 0, 9, 8)
-        self.grid.addWidget(self.sente_mochi, 11, 0, 1, 8)
-        self.grid.addWidget(self.sideMenu, 0, 8, 11, 1)
+        self.vboxL.addWidget(self.gote_mochi)
+        self.vboxL.addWidget(self.ban)
+        self.vboxL.addWidget(self.sente_mochi)
+        self.rightWidget = QtGui.QWidget()
+        self.rightWidget.setFixedSize(200, 800)
+        self.vboxR = QtGui.QVBoxLayout(self.rightWidget)
+        self.option = Option(self.ban)
+        self.kifu = Kifu()
+        self.operation = Operation(self.ban)
+        self.vboxR.addWidget(self.option)
+        self.vboxR.addWidget(self.kifu)
+        self.vboxR.addWidget(self.operation)
+        self.widget = QtGui.QWidget()
+        self.hbox = QtGui.QHBoxLayout(self.widget)
+        self.hbox.addWidget(self.leftWidget)
+        self.hbox.addWidget(self.rightWidget)
         self.setCentralWidget(self.widget)
 
 def main():
