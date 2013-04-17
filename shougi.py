@@ -92,9 +92,10 @@ class Mochi(QtGui.QWidget):
             # select mochi koma
             if self.select == Koma.Nothing and \
                     self.ban.checkTurn(self.player):
-                if x in range(min(self.location2.keys()),
-                              max(self.location2.keys())+1) and \
-                        self.koma[self.location2[x]] > 0:
+                if x in range(min(self.location2.keys()), \
+                                  max(self.location2.keys())+1) and \
+                                  self.koma[self.location2[x]] > 0:
+                    self.ban.cancelSelect()
                     self.select = self.location2[x]
                     self.update()
                     self.ban.selectMochi(self.select)
@@ -216,6 +217,7 @@ class Ban(QtGui.QWidget):
             # select koma on ban
             if self.select == () and \
                     self.state[(x, y)] in Koma.jigoma(self.turn):
+                self.cancelSelect()
                 self.select = (x, y)
                 self.candidates = \
                     self.calcCandidates(self.state[(x, y)], False, x, y)
@@ -226,7 +228,8 @@ class Ban(QtGui.QWidget):
                     koma = self.state[self.select]
                 else:
                     koma = self.mochi_select
-                self.kifu.record(self.moveKoma(koma, self.select, (x, y)))
+                self.kifuList.addTe(self.kifu.record(
+                        self.moveKoma(koma, self.select, (x, y))))
                 # common
                 self.candidates = []
                 self.update()
@@ -409,6 +412,9 @@ class Ban(QtGui.QWidget):
         self.sente_mochi = sente
         self.gote_mochi = gote
 
+    def setKifuList(self, kifuList):
+        self.kifuList = kifuList
+
     def checkTurn(self, turn):
         if turn == self.turn:
             return True
@@ -502,9 +508,53 @@ class Option(QtGui.QWidget):
         elif self.vKiki.checkState() == QtCore.Qt.Unchecked:
             self.ban.setVKiki(False)
 
-class KifuList(QtGui.QTreeWidget):
+class KifuList(QtGui.QListWidget):
     def __init__(self):
         super(KifuList, self).__init__()
+
+    def addTe(self, te):
+        no = te[0]
+        koma = te[1][0]
+        masu = te[1][2]
+        if abs(koma) == Koma.Sente_Fu:
+            koma = 'Fu'
+        elif abs(koma) == Koma.Sente_Kyou:
+            koma = 'Kyou'
+        elif abs(koma) == Koma.Sente_Kei:
+            koma = 'Kei'
+        elif abs(koma) == Koma.Sente_Gin:
+            koma = 'Gin'
+        elif abs(koma) == Koma.Sente_Kin:
+            koma = 'Kin'
+        elif abs(koma) == Koma.Sente_Hisha:
+            koma = 'Hisha'
+        elif abs(koma) == Koma.Sente_Kaku:
+            koma = 'Kaku'
+        elif abs(koma) == Koma.Sente_NariFu:
+            koma = 'NariFu'
+        elif abs(koma) == Koma.Sente_NariKyou:
+            koma = 'NariKyou'
+        elif abs(koma) == Koma.Sente_NariKei:
+            koma = 'NariKei'
+        elif abs(koma) == Koma.Sente_NariGin:
+            koma = 'NariGin'
+        elif abs(koma) == Koma.Sente_NariHisha:
+            koma = 'NariHisha'
+        elif abs(koma) == Koma.Sente_NariKaku:
+            koma = 'NariKaku'
+        elif abs(koma) == Koma.Sente_Gyoku:
+            koma = 'Gyoku'
+        if no%2 == 1:
+            turn = 'Sente'
+        else:
+            turn = 'Gote'
+        item = QtGui.QListWidgetItem(str(no)+':'+turn+'('+
+                                     str(9-masu[0])+','+str(masu[1]+1)+') '+
+                                     koma)
+        if no-1 != self.count():
+            for i in range(no-1, self.count()+1):
+                self.takeItem(no-1)
+        self.addItem(item)
 
 class Operation(QtGui.QWidget):
     def __init__(self, ban):
@@ -542,6 +592,7 @@ class Kifu():
         self.kifu.insert(self.current, (koma, before, after, nari, tori))
         self.current += 1
         self.head += 1
+        return self.current, self.kifu[self.current-1]
 
     def jump(self, index):
         moveList = []
@@ -559,8 +610,7 @@ class Kifu():
         return self.jump(0)
 
     def previous(self):
-        moveList = self.jump(self.current-1)
-        return moveList
+        return self.jump(self.current-1)
 
     def next(self):
         return self.jump(self.current+1)
@@ -762,7 +812,6 @@ class Jin:
             return True
         else:
             return False
-        
 
 class Pictures:
     Path = {
@@ -811,7 +860,6 @@ class Window(QtGui.QMainWindow):
         self.sente_mochi.setFixedSize(600, 70)
         self.gote_mochi = Mochi(self.ban, Turn.Gote)
         self.gote_mochi.setFixedSize(600, 70)
-        self.ban.setMochi(self.sente_mochi, self.gote_mochi)
         self.vboxL.addWidget(self.gote_mochi)
         self.vboxL.addWidget(self.ban)
         self.vboxL.addWidget(self.sente_mochi)
@@ -829,6 +877,8 @@ class Window(QtGui.QMainWindow):
         self.hbox.addWidget(self.leftWidget)
         self.hbox.addWidget(self.rightWidget)
         self.setCentralWidget(self.widget)
+        self.ban.setMochi(self.sente_mochi, self.gote_mochi)
+        self.ban.setKifuList(self.kifuList)
 
 def main():
     app = QtGui.QApplication(sys.argv)
