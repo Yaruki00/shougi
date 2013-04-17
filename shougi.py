@@ -166,6 +166,7 @@ class Ban(QtGui.QWidget):
         self.kiki = self.calcKiki()
         self.vCandidates = True
         self.vKiki = False
+        self.kifu = Kifu()
 
     def paintEvent(self, e):
         width = self.width()-1
@@ -221,44 +222,78 @@ class Ban(QtGui.QWidget):
                 self.update()
             # move or put koma
             elif (x, y) in self.candidates:
-                # move
                 if self.select != ():
-                    if self.state[(x, y)] in Koma.Gote_Koma:
-                        self.sente_mochi.addKoma(
-                            Koma.changePlayer(self.state[(x, y)]))
-                    elif self.state[(x, y)] in Koma.Sente_Koma:
-                        self.gote_mochi.addKoma(
-                            Koma.changePlayer(self.state[(x, y)]))
-                    if self.state[self.select] in Koma.Nareru and \
-                            ( y in Jin.tekijin(self.turn) or \
-                                  self.select[1] in Jin.tekijin(self.turn)):
-                        if Jin.naru(self.state[self.select], y) or \
-                                self.askNari():
-                            self.state[(x, y)] = Koma.naru(
-                                self.state[self.select], self.turn)
-                        else:
-                            self.state[(x, y)] = self.state[self.select]
-                    else:
-                        self.state[(x, y)] = self.state[self.select]
-                    self.state[self.select] = Koma.Nothing
-                    self.kiki = self.calcKiki()
-                    self.select = ()
-                # put
+                    koma = self.state[self.select]
                 else:
-                    self.state[(x, y)] = self.mochi_select
-                    if self.turn == Turn.Sente:
-                        self.sente_mochi.subKoma(self.mochi_select)
-                    else:
-                        self.gote_mochi.subKoma(self.mochi_select)
-                    self.kiki = self.calcKiki()
-                    self.mochi_select = Koma.Nothing
+                    koma = self.mochi_select
+                self.kifu.record(self.moveKoma(koma, self.select, (x, y)))
                 # common
                 self.candidates = []
-                self.turn = Turn.changeTurn(self.turn)
                 self.update()
+                self.turn = Turn.changeTurn(self.turn)
             # cancel
             else:
                 self.cancelSelect()
+
+    def moveKoma(self, koma, before, after):
+        nari = False
+        tori = Koma.Nothing
+        # move
+        if before != ():
+            if self.state[after] in Koma.Gote_Koma:
+                tori = self.state[after]
+                self.sente_mochi.addKoma(Koma.changePlayer(tori))
+            elif self.state[after] in Koma.Sente_Koma:
+                tori = self.state[after]
+                self.gote_mochi.addKoma(Koma.changePlayer(tori))
+            if koma in Koma.Nareru and \
+                    ( after[1] in Jin.tekijin(self.turn) or \
+                          before[1] in Jin.tekijin(self.turn)):
+                if Jin.naru(koma, after[1]) or self.askNari():
+                    koma = Koma.naru(koma, self.turn)
+                    nari = True
+            self.state[after] = koma
+            self.state[before] = Koma.Nothing
+            self.kiki = self.calcKiki()
+            self.select = ()
+        # put
+        else:
+            self.state[after] = koma
+            if self.turn == Turn.Sente:
+                self.sente_mochi.subKoma(koma)
+            else:
+                self.gote_mochi.subKoma(koma)
+                self.kiki = self.calcKiki()
+                self.mochi_select = Koma.Nothing
+        return koma, before, after, nari, tori
+
+    def duplicateKifu(self, operation, back=0):
+        koma = operation[0]
+        before = operation[1]
+        after = operation[2]
+        nari = operation[3]
+        tori = operation[4]
+        if back == 0:
+            self.state[after] = koma
+            if tori != Koma.Nothing:
+                if self.turn == Turn.Sente:
+                    self.sente_mochi.addKoma(Koma.changePlayer(tori))
+                elif self.turn == Turn.Gote:
+                    self.gote_mochi.addKoma(Koma.changePlayer(tori))
+            self.state[before] = Koma.Nothing
+        elif back == -1:
+            if nari:
+                self.state[before] = Koma.modoru(koma, self.turn)
+            else:
+                self.state[before] = koma
+            if tori != Koma.Nothing:
+                if self.turn == Turn.Sente:
+                    self.sente_mochi.subKoma(Koma.changePlayer(tori))
+                elif self.turn == Turn.Gote:
+                    self.gote_mochi.subKoma(Koma.changePlayer(tori))
+                self.state[after] = tori
+            else:
+                self.state[after] = Koma.Nothing
 
     def calcCandidates(self, koma, mochi, x=0, y=0):
         candidates = []
@@ -414,6 +449,34 @@ class Ban(QtGui.QWidget):
         self.vKiki = boolean
         self.update()
 
+    def jumpFirst(self):
+        operations = self.kifu.first()
+        if operations != []:
+            for operation in operations:
+                self.turn = Turn.changeTurn(self.turn)
+                self.duplicateKifu(operation, -1)
+            self.update()
+
+    def jumpPrevious(self):
+        operations = self.kifu.previous()
+        if operations != []:
+            for operation in operations:
+                self.turn = Turn.changeTurn(self.turn)
+                self.duplicateKifu(operation, -1)
+            self.update()
+
+    def jumpNext(self):
+        for operation in self.kifu.next():
+            self.duplicateKifu(operation)
+            self.turn = Turn.changeTurn(self.turn)
+        self.update()
+
+    def jumpLast(self):
+        for operation in self.kifu.last():
+            self.duplicateKifu(operation)
+            self.turn = Turn.changeTurn(self.turn)
+        self.update()
+
 class Option(QtGui.QWidget):
     def __init__(self, ban):
         super(Option, self).__init__()
@@ -439,22 +502,71 @@ class Option(QtGui.QWidget):
         elif self.vKiki.checkState() == QtCore.Qt.Unchecked:
             self.ban.setVKiki(False)
 
-class Kifu(QtGui.QTreeWidget):
+class KifuList(QtGui.QTreeWidget):
     def __init__(self):
-        super(Kifu, self).__init__()
+        super(KifuList, self).__init__()
 
 class Operation(QtGui.QWidget):
     def __init__(self, ban):
         super(Operation, self).__init__()
+        self.ban = ban
         self.hbox = QtGui.QHBoxLayout(self)
         self.first = QtGui.QPushButton('<<')
+        self.first.clicked.connect(self.ban.jumpFirst)
         self.previous = QtGui.QPushButton('<')
+        self.previous.clicked.connect(self.ban.jumpPrevious)
         self.next = QtGui.QPushButton('>')
+        self.next.clicked.connect(self.ban.jumpNext)
         self.last = QtGui.QPushButton('>>')
+        self.last.clicked.connect(self.ban.jumpLast)
         self.hbox.addWidget(self.first)
         self.hbox.addWidget(self.previous)
         self.hbox.addWidget(self.next)
         self.hbox.addWidget(self.last)
+
+class Kifu():
+    def __init__(self):
+        self.kifu = []
+        self.current = 0
+        self.head = 0
+
+    def record(self, operation):
+        koma = operation[0]
+        before = operation[1]
+        after = operation[2]
+        nari = operation[3]
+        tori = operation[4]
+        if self.current != self.head:
+            del self.kifu[self.current:]
+            self.head = self.current
+        self.kifu.insert(self.current, (koma, before, after, nari, tori))
+        self.current += 1
+        self.head += 1
+
+    def jump(self, index):
+        moveList = []
+        if index > self.current and index <= self.head:
+            for i in range(self.current, index):
+                moveList.append(self.kifu[i])
+                self.current = index
+        elif index < self.current and index >= 0:
+            for i in range(self.current-1, index-1, -1):
+                moveList.append(self.kifu[i])
+                self.current = index
+        return moveList
+
+    def first(self):
+        return self.jump(0)
+
+    def previous(self):
+        moveList = self.jump(self.current-1)
+        return moveList
+
+    def next(self):
+        return self.jump(self.current+1)
+
+    def last(self):
+        return self.jump(self.head)
 
 class Koma:
     Nothing = 0
@@ -519,6 +631,10 @@ class Koma:
     @classmethod
     def naru(self, koma, turn):
         return koma + 7*turn
+
+    @classmethod
+    def modoru(self, koma, turn):
+        return koma - 7*turn
 
     @classmethod
     def teki(self, koma):
@@ -703,10 +819,10 @@ class Window(QtGui.QMainWindow):
         self.rightWidget.setFixedSize(200, 800)
         self.vboxR = QtGui.QVBoxLayout(self.rightWidget)
         self.option = Option(self.ban)
-        self.kifu = Kifu()
+        self.kifuList = KifuList()
         self.operation = Operation(self.ban)
         self.vboxR.addWidget(self.option)
-        self.vboxR.addWidget(self.kifu)
+        self.vboxR.addWidget(self.kifuList)
         self.vboxR.addWidget(self.operation)
         self.widget = QtGui.QWidget()
         self.hbox = QtGui.QHBoxLayout(self.widget)
